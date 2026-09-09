@@ -10,14 +10,9 @@ Arcade Vault — a platform for playing games online and competing for the highe
 
 `AGENTS.md` (imported via `CLAUDE.md`'s `@AGENTS.md`) is regenerated automatically by `next dev` — do not remove it, and committing it is expected to keep the tree clean. It states that this Next.js version has breaking changes from training data. **Before writing any Next.js code, read the relevant guide under `node_modules/next/dist/docs/`** (e.g. `01-app/01-getting-started/` for routing/layouts/data fetching, `01-app/03-api-reference/05-config/` for `next.config.ts` options). Heed deprecation notices found there. Notable App Router layout convention already in use: `LayoutProps<"/">` typed props (see `app/layout.tsx`) rather than a manually declared `{ children }` type.
 
-## Commands
+## Skills
 
-- `npm run dev` — start dev server (Turbopack, per default Next 16 behavior)
-- `npm run build` — production build
-- `npm run start` — run production build
-- `npm run lint` — ESLint (flat config in `eslint.config.mjs`, extends `eslint-config-next` core-web-vitals + typescript)
-
-There is no test runner configured in this project yet.
+Usa siempre /frontend-design para diseñar interfaces de usuario
 
 ## Architecture notes
 
