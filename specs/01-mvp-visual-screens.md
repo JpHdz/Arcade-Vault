@@ -1,6 +1,6 @@
 # SPEC 01 — MVP: visual screens of Arcade Vault
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** —
 > **Date:** 2026-09-09
 > **Objective:** Port the five screens of the `references/templates/` prototype to the Next.js App Router as a purely visual MVP, with no playable game.
