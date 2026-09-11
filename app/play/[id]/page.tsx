@@ -13,14 +13,14 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata(
-  props: PageProps<"/jugar/[id]">,
+  props: PageProps<"/play/[id]">,
 ): Promise<Metadata> {
   const { id } = await props.params;
   const game = getGame(id);
   return { title: game ? `Jugando · ${game.title}` : undefined };
 }
 
-export default async function PlayerPage(props: PageProps<"/jugar/[id]">) {
+export default async function PlayerPage(props: PageProps<"/play/[id]">) {
   const { id } = await props.params;
   const game = getGame(id);
   if (!game) notFound();

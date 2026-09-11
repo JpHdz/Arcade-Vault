@@ -15,13 +15,13 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata(
-  props: PageProps<"/juegos/[id]">,
+  props: PageProps<"/games/[id]">,
 ): Promise<Metadata> {
   const { id } = await props.params;
   return { title: getGame(id)?.title };
 }
 
-export default async function GameDetailPage(props: PageProps<"/juegos/[id]">) {
+export default async function GameDetailPage(props: PageProps<"/games/[id]">) {
   const { id } = await props.params;
   const game = getGame(id);
   if (!game) notFound();
@@ -74,10 +74,10 @@ export default async function GameDetailPage(props: PageProps<"/juegos/[id]">) {
             </div>
           </div>
           <div className="detail-actions">
-            <Link className="btn xl pulse" href={`/jugar/${game.id}`}>
+            <Link className="btn xl pulse" href={`/play/${game.id}`}>
               ▶ JUGAR AHORA
             </Link>
-            <Link className="btn ghost lg" href="/">
+            <Link className="btn ghost lg" href="/games">
               VOLVER AL VAULT
             </Link>
           </div>

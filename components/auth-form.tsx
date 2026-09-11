@@ -15,12 +15,12 @@ export function AuthForm() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     signIn({ name: (name || "PLAYER1").toUpperCase().slice(0, 10) });
-    router.push("/");
+    router.push("/games");
   };
 
   const playAsGuest = () => {
     signOut();
-    router.push("/");
+    router.push("/games");
   };
 
   return (

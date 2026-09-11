@@ -34,7 +34,7 @@ export default function NotFound() {
         Esta ranura del vault está vacía. Vuelve a la biblioteca y elige otro
         juego.
       </p>
-      <Link className="btn lg" href="/" style={{ marginTop: 32 }}>
+      <Link className="btn lg" href="/games" style={{ marginTop: 32 }}>
         VOLVER AL VAULT
       </Link>
     </div>

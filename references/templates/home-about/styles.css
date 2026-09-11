@@ -1,5 +1,3 @@
-@import "tailwindcss";
-
 /* ===== ARCADE VAULT — theme ===== */
 :root {
   --bg: #0a0a0f;
@@ -17,23 +15,11 @@
   --bronze: #d97a3a;
   --line: rgba(0, 245, 255, 0.18);
   --line-2: rgba(255, 255, 255, 0.06);
-  /* These name the @font-face families that next/font registers in app/layout.tsx.
-     The --font-* variables it also exposes are avoided on purpose: their value
-     appends a metric-adjusted fallback face (size-adjust: 224%) that the browser
-     picks for glyphs the pixel font lacks — → ▶ ♥ ★ — rendering them far wider
-     than the design reference. adjustFontFallback: false does not help, since
-     Turbopack ignores it. */
   --pixel: "Press Start 2P", system-ui, monospace;
   --mono: "JetBrains Mono", "Courier Prime", "Courier New", monospace;
 }
 
 * { box-sizing: border-box; }
-
-/* Tailwind's preflight resets headings to `font-weight: inherit`. The design
-   reference has no such reset and relies on the user-agent bold, which the
-   browser synthesises for the single-weight pixel font. Restore it so headings
-   render with the same stroke weight as the reference. */
-h1, h2, h3, h4, h5, h6 { font-weight: bold; }
 
 html, body, #root {
   height: 100%;
@@ -229,10 +215,6 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--pixel);
   font-size: 10px;
   letter-spacing: 0.16em;
-  /* The reference renders these as <button>, whose user-agent `text-align:
-     center` keeps wrapped labels centred. Anchors inherit `left`, so set it
-     explicitly for the link-based buttons used here. */
-  text-align: center;
   background: transparent;
   color: var(--ink);
   border: 1px solid var(--cyan);
@@ -1646,7 +1628,7 @@ a { color: inherit; text-decoration: none; }
 .live-led span { width: 6px; height: 6px; }
 .live-led span { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse-led 1.4s ease-in-out infinite; }
 @keyframes pulse-led { 50% { opacity: 0.35; transform: scale(0.85); } }
-.lb-link { background: transparent; border: 1px solid var(--line); padding: 6px 10px; font-family: var(--pixel); font-size: 9px; letter-spacing: 0.14em; color: var(--ink-dim); cursor: pointer; text-align: center; }
+.lb-link { background: transparent; border: 1px solid var(--line); padding: 6px 10px; font-family: var(--pixel); font-size: 9px; letter-spacing: 0.14em; color: var(--ink-dim); cursor: pointer; }
 .lb-link:hover { color: var(--magenta); border-color: var(--magenta); box-shadow: 0 0 8px rgba(255,0,110,0.35); }
 
 .ticker { padding: 6px 0; max-height: 360px; overflow: hidden; }
