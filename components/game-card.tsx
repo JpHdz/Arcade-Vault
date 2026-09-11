@@ -28,7 +28,7 @@ export function GameCard({ game }: { game: Game }) {
     <Link
       ref={tiltRef}
       className="card"
-      href={`/juegos/${game.id}`}
+      href={`/games/${game.id}`}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
     >

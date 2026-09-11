@@ -7,11 +7,7 @@ import { useSession } from "@/lib/session";
 
 /** The library tab stays lit while browsing or playing a game. */
 function isLibrary(pathname: string) {
-  return (
-    pathname === "/" ||
-    pathname.startsWith("/juegos") ||
-    pathname.startsWith("/jugar")
-  );
+  return pathname.startsWith("/games") || pathname.startsWith("/play");
 }
 
 export function Nav() {
@@ -25,18 +21,27 @@ export function Nav() {
   return (
     <>
       <nav className="av-nav">
-        <Link className="logo" href="/" onClick={close}>
+        <Link className="logo" href="/home" onClick={close}>
           <div className="logo-mark" />
           <div className="logo-text neon-cyan">
             ARCADE <span className="neon-magenta">VAULT</span>
           </div>
         </Link>
         <div className="links">
-          <Link className={cls(isLibrary(pathname))} href="/">
+          <Link className={cls(pathname === "/home")} href="/home">
+            Inicio
+          </Link>
+          <Link className={cls(isLibrary(pathname))} href="/games">
             Biblioteca
           </Link>
-          <Link className={cls(pathname === "/salon")} href="/salon">
+          <Link
+            className={cls(pathname === "/hall-of-fame")}
+            href="/hall-of-fame"
+          >
             Salón de la Fama
+          </Link>
+          <Link className={cls(pathname === "/about")} href="/about">
+            Acerca de
           </Link>
         </div>
         <div className="spacer" />
@@ -49,7 +54,7 @@ export function Nav() {
             {user.name} ▾
           </button>
         ) : (
-          <Link className="btn auth-btn" href="/auth">
+          <Link className="btn auth-btn" href="/sign-in">
             Iniciar Sesión
           </Link>
         )}
@@ -70,19 +75,25 @@ export function Nav() {
         <div className="pixel neon-cyan" style={{ fontSize: 11, marginBottom: 16 }}>
           MENÚ
         </div>
-        <Link className={cls(isLibrary(pathname))} href="/" onClick={close}>
+        <Link className={cls(pathname === "/home")} href="/home" onClick={close}>
+          Inicio
+        </Link>
+        <Link className={cls(isLibrary(pathname))} href="/games" onClick={close}>
           Biblioteca
         </Link>
         <Link
-          className={cls(pathname === "/salon")}
-          href="/salon"
+          className={cls(pathname === "/hall-of-fame")}
+          href="/hall-of-fame"
           onClick={close}
         >
           Salón de la Fama
         </Link>
+        <Link className={cls(pathname === "/about")} href="/about" onClick={close}>
+          Acerca de
+        </Link>
         <Link
-          className={cls(pathname === "/auth")}
-          href="/auth"
+          className={cls(pathname === "/sign-in")}
+          href="/sign-in"
           onClick={close}
         >
           {user ? "Cuenta" : "Iniciar Sesión"}
