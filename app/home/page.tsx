@@ -96,7 +96,7 @@ export default function HomePage() {
           <div className="section-rule" />
         </div>
         <div className="mini-rail">
-          {GAMES.slice(0, 6).map((g) => (
+          {GAMES.slice(0, 7).map((g) => (
             <MiniCard key={g.id} game={g} />
           ))}
         </div>
