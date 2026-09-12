@@ -17,7 +17,6 @@ import {
   START_ASTEROIDS,
   START_LIVES,
   W,
-  type Rgb,
 } from "./constants";
 import {
   Asteroid,
@@ -145,12 +144,12 @@ export const createAsteroidsGame: EngineFactory = (canvas, callbacks) => {
     spawnAsteroids(LEVEL_BASE_ASTEROIDS + level);
   }
 
-  function explode(x: number, y: number, count: number, rgb: Rgb) {
-    for (let i = 0; i < count; i++) particles.push(new Particle(x, y, rgb));
+  function explode(x: number, y: number, count = 8) {
+    for (let i = 0; i < count; i++) particles.push(new Particle(x, y));
   }
 
   function killShip() {
-    explode(ship.x, ship.y, SHIP_PARTICLES, COLORS.shipParticle);
+    explode(ship.x, ship.y, SHIP_PARTICLES);
     ship.dead = true;
     lives--;
     if (lives <= 0) {
@@ -207,12 +206,7 @@ export const createAsteroidsGame: EngineFactory = (canvas, callbacks) => {
           b.dead = true;
           a.dead = true;
           score += POINTS[a.size];
-          explode(
-            a.x,
-            a.y,
-            a.size * ASTEROID_PARTICLES_PER_SIZE,
-            COLORS.asteroidParticle,
-          );
+          explode(a.x, a.y, a.size * ASTEROID_PARTICLES_PER_SIZE);
           newAsteroids.push(...a.split());
           if (!powerUpSpawned) {
             killsSinceSpawn++;
@@ -282,8 +276,8 @@ export const createAsteroidsGame: EngineFactory = (canvas, callbacks) => {
   }
 
   function draw() {
-    // Transparent background: the CRT vignette shows through underneath.
-    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = COLORS.background;
+    ctx.fillRect(0, 0, W, H);
 
     particles.forEach((p) => p.draw(ctx));
     asteroids.forEach((a) => a.draw(ctx));

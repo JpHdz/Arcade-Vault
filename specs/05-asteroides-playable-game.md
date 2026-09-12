@@ -29,7 +29,7 @@ Tetris and Arkanoid already wait under `references/started-games/`. So this spec
 - A generic engine contract (`lib/engines/types.ts`) and a registry (`lib/engines/registry.ts`) mapping catalog ids to engine factories.
 - A TypeScript port of `game.js` under `lib/engines/asteroids/`. It is instance-scoped, with no module-level mutable state, and every listener and frame is released on `destroy()`.
 - Mechanics ported verbatim: every constant, the split rules, scoring, lives, respawn invincibility, level progression and the triple-shot power-up.
-- A neon recolour of the vector drawing using the platform palette, with a soft glow.
+- The original look of `game.js`, unchanged: white vector lines on an opaque black background, a `#0ff` power-up and no glow. (Amended after implementation: the neon recolour first planned here was dropped at the user's request, both to keep the original style and to avoid the per-frame `shadowBlur` cost.)
 - **Both HUDs.** The game keeps its own in-canvas HUD (`drawHUD` / `drawLifeIcon`: `SCORE`, `NIVEL`, the ship life icons and the `3x` timer) and its keyboard controls, ported verbatim. In addition, the engine notifies React of score, lives, level and the triple-shot timer so the existing React HUD shows them too.
 - A new `DISPARO 3X` HUD stat, visible only while the power-up is active.
 - A start overlay (`PULSA ESPACIO PARA EMPEZAR`) inside the CRT. Space or a click starts the run.
@@ -122,11 +122,11 @@ export function getEngine(gameId: string): EngineFactory | undefined;
 
 ### Asteroids engine — `lib/engines/asteroids/`
 
-| File           | Contents                                                                                                                                                                                                      |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `constants.ts` | World size (`W = 800`, `H = 600`), every numeric constant from `game.js` with its original value, and the colour table below.                                                                                 |
-| `entities.ts`  | `Bullet`, `Asteroid`, `PowerUp`, `Ship`, `Particle`. The same fields and update rules as the original. `draw(ctx)` takes the context as a parameter. `Ship.update` receives the held-keys map as a parameter. |
-| `game.ts`      | `createAsteroidsGame: EngineFactory`. It owns the run state, the loop, input, the device-pixel-ratio setup and the stats emission.                                                                            |
+| File           | Contents                                                                                                                                                                                                               |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `constants.ts` | World size (`W = 800`, `H = 600`), every numeric constant from `game.js` with its original value, and the original colours.                                                                                            |
+| `entities.ts`  | `Bullet`, `Asteroid`, `PowerUp`, `Ship`, `Particle`. The same fields, update rules and colours as the original. `draw(ctx)` takes the context as a parameter. `Ship.update` receives the held-keys map as a parameter. |
+| `game.ts`      | `createAsteroidsGame: EngineFactory`. It owns the run state, the loop, input, the device-pixel-ratio setup and the stats emission.                                                                                     |
 
 Internal run phase, private to `game.ts`:
 
@@ -139,24 +139,23 @@ type Phase = "ready" | "playing" | "dead" | "gameover";
 - `playing` / `dead`: the original `'playing'` / `'dead'` states, unchanged.
 - `gameover`: the loop stops, `onGameOver(score)` fires once, and nothing else happens. There is no Space-to-restart.
 
-### Colour table — `constants.ts`
+### Colours — `constants.ts`
 
-Canvas cannot read CSS variables, so the hex values mirror `app/globals.css`, with a comment pointing there.
+The game keeps the colours of `game.js`, with no glow (`shadowBlur`) anywhere:
 
-| Element                  | Original                  | New                             | Glow (`shadowBlur`) |
-| ------------------------ | ------------------------- | ------------------------------- | ------------------- |
-| Ship outline             | `#fff`                    | `#00f5ff` (`--cyan`)            | 8                   |
-| Thrust flame             | `rgba(255, 130, 0, 0.85)` | unchanged                       | none                |
-| Asteroid outline         | `#fff`                    | `#ff006e` (`--magenta`)         | 8                   |
-| Bullet                   | `#fff`                    | `#f5ff00` (`--yellow`)          | none                |
-| Power-up diamond + `3x`  | `#0ff`                    | `#00ff88` (`--green`)           | 8                   |
-| Asteroid particles       | white, fading             | `--magenta`, fading             | none                |
-| Ship explosion particles | white, fading             | `--cyan`, fading                | none                |
-| Background               | `fillRect` `#000`         | `clearRect`: transparent canvas | —                   |
+| Element                  | Colour                                                          |
+| ------------------------ | --------------------------------------------------------------- |
+| Ship outline             | `#fff`                                                          |
+| Thrust flame             | `rgba(255, 130, 0, 0.85)`                                       |
+| Asteroid outline         | `#fff`                                                          |
+| Bullet                   | `#fff`                                                          |
+| Power-up diamond + `3x`  | `#0ff`                                                          |
+| Asteroid particles       | white, fading                                                   |
+| Ship explosion particles | white, fading                                                   |
+| Background               | `fillRect` `#000`                                               |
+| In-canvas HUD            | white `15px monospace` text, white life icons, `#0ff` `3x` line |
 
-The transparent background lets the `.crt-screen` black ground and its `::before` vignette show through. The `::after` scanlines stay on top of the canvas.
-
-The neon recolour applies to the world only. The in-canvas HUD keeps the original colours and fonts: white `15px monospace` text, white life icons and the `#0ff` `3x` line.
+The opaque background covers the `.crt-screen` `::before` vignette, as in the original; the `::after` scanlines stay on top of the canvas.
 
 ### Kept from the port: the in-canvas HUD
 
@@ -191,7 +190,7 @@ Each step leaves the project building and every route working.
 3. **Cover.** Invoke `/frontend-design` as `CLAUDE.md` requires. Then add `.cover-asteroides` with its `::before` / `::after` to `app/globals.css`, next to the other `cover-*` rules. Use only existing palette variables, and suggest the ship silhouette and polygonal rocks. Do not touch `.cover-rocas`.
 4. **Home rail.** Change `GAMES.slice(0, 6)` to `GAMES.slice(0, 7)` in `app/home/page.tsx`. Change the base `.mini-rail` rule to `repeat(7, minmax(0, 1fr))`. Leave both media queries as they are.
 5. **Engine contract and registry.** Create `lib/engines/types.ts` with the types above and `lib/engines/registry.ts` with `getEngine` over an empty map. Nothing consumes it yet.
-6. **Constants and entities.** Create `lib/engines/asteroids/constants.ts` and `lib/engines/asteroids/entities.ts`. Port the five classes with the same numbers. Each class exposes `draw(ctx)` and uses the colour table. No module-level mutable state.
+6. **Constants and entities.** Create `lib/engines/asteroids/constants.ts` and `lib/engines/asteroids/entities.ts`. Port the five classes with the same numbers. Each class exposes `draw(ctx)` and uses the original colours. No module-level mutable state.
 7. **Engine core.** Create `lib/engines/asteroids/game.ts` with `createAsteroidsGame`. It holds the per-instance state and ports `spawnAsteroids`, `initGame`, `nextLevel`, `explode`, `killShip`, `update`, `drawHUD`, `drawLifeIcon` and `draw` — the in-canvas HUD included — minus only `drawOverlay` and the Space-restart branch. It runs the `requestAnimationFrame` loop with the original 50 ms `dt` clamp, and emits `onStats` only on change and `onGameOver` once.
 8. **Engine input and lifecycle.** In the same file, add `keydown` / `keyup` listeners on `window` with these rules:
    - Ignore events whose target is an `input`, `textarea`, `select` or content-editable element.
@@ -245,7 +244,7 @@ Each step leaves the project building and every route working.
 - [ ] After leaving `/play/asteroides` through `SALIR`, pressing Space and the arrows on `/games/asteroides` scrolls the page normally, and the console shows no errors.
 - [ ] Entering and leaving `/play/asteroides` three times in a row, then playing, the ship rotates and bullets travel at the same speed as on the first visit (no stacked loops).
 - [ ] The canvas `width` attribute equals `800 × min(devicePixelRatio, 2)` and the vector lines are not blurry on a 2× screen.
-- [ ] A Playwright screenshot during play shows a cyan ship, magenta asteroids, yellow bullets and, when present, a green power-up, over the CRT vignette and under its scanlines.
+- [ ] A Playwright screenshot during play shows the original look: a white ship, white asteroids, white bullets and, when present, a cyan `3x` power-up on black, with no glow, under the CRT scanlines.
 - [ ] `/play/rocas` and the other seven players still run the SPEC 01 simulation, and `P` does nothing there.
 - [ ] The browser console reports no errors or hydration warnings on any route touched.
 - [ ] No page loads files from `references/` at runtime.
@@ -268,8 +267,8 @@ Each step leaves the project building and every route working.
 | HUD               | Both: the game's in-canvas HUD kept verbatim, plus the React HUD fed by `onStats`                | Removing `drawHUD` so the canvas draws only the world; canvas-only HUD    | The game keeps its own HUD and controls intact and only notifies React. The React HUD adds the platform's view without taking anything from the game. |
 | Stats emission    | Only on change                                                                                   | Every frame                                                               | A `setState` per frame would re-render the player 60 times a second for nothing.                                                                      |
 | Triple-shot timer | Both: the original `3x  4.2s` canvas line, plus a fifth React HUD stat visible only while active | Only one of the two; no indicator                                         | It follows the HUD decision: the canvas line is part of `drawHUD`, and the React HUD mirrors it.                                                      |
-| Visual style      | Neon recolour of the same geometry, glow on the ship, asteroids and power-up                     | White on black as in the original                                         | It matches the CRT frame and the site palette. The power-up moves from cyan to green so it does not blend with the ship.                              |
-| Canvas background | Transparent (`clearRect`)                                                                        | Opaque black fill                                                         | The CRT vignette under the canvas stays visible; an opaque fill would hide it.                                                                        |
+| Visual style      | White on black as in the original, no glow                                                       | Neon recolour with `shadowBlur` glow (first approved, then dropped)       | Amended after implementation at the user's request: the game keeps its own look, and per-frame canvas glow is the costliest part of rendering.        |
+| Canvas background | Opaque black fill, as in the original                                                            | Transparent (`clearRect`)                                                 | It follows the original look; the CRT scanlines still sit on top.                                                                                     |
 | Mechanics         | Verbatim constants and rules, triple shot included                                               | Rebalancing; UFOs; hyperspace                                             | The port is a translation. Gameplay changes would need their own spec and their own tuning.                                                           |
 | Run start         | Start overlay, Space or click to begin, for every run                                            | Starting on mount like the original                                       | The player does not lose a life while the page loads, and the first key press lands on the game.                                                      |
 | Game over         | The existing modal and `saveScore`; the canvas overlay removed                                   | Keeping the canvas `GAME OVER` with Space to restart                      | Saving a score already lives in the modal. A second restart path would bypass it.                                                                     |
@@ -288,11 +287,9 @@ Each step leaves the project building and every route working.
 - **Swallowing keys meant for the page.** `preventDefault()` on Space and the arrows is required so the page does not scroll, but applied too broadly it breaks typing in the modal's name input and scrolling on other pages. The target filter and the phase check are what keep it contained.
 - **Double-handling the starting Space.** The same keydown that dismisses the start overlay could also reach the engine and fire a bullet. `start()` clearing the key maps before the first frame prevents it.
 - **Stuck keys after a blur.** A key released while the window is unfocused never delivers `keyup`, so the ship would keep thrusting on return. `pause()` clearing the held-keys map is the fix, and auto-pause on blur makes sure it runs.
-- **`shadowBlur` cost.** Canvas glow is expensive. The later levels have many asteroids plus particles, so glow is limited to the ship, the asteroids and the power-up, and never applied to particles or bullets. If frame time suffers on low-end machines, glow on the asteroids is the first thing to drop.
 - **Re-render churn.** Emitting stats every frame, or passing inline callbacks that rebuild the engine on every render, would tank performance or reset the game mid-run. The callbacks go through refs and stats are emitted only on change.
 - **The two HUDs disagreeing.** If `onStats` is emitted from a different point than the one `drawHUD` reads, the canvas and React numbers can differ for a frame or drift. Both must read the same per-instance state, and `onStats` must be emitted at the end of the same `update` that `draw` then renders.
 - **The rail at 7 columns.** Between 1100 px and roughly 1300 px, seven cards get narrow and the 10 px pixel-font titles may wrap. The acceptance check at 1440 px does not cover that band, so eyeball it at 1150 px.
-- **Palette drift.** The canvas colours are hex copies of the CSS variables. If `app/globals.css` changes its palette, the canvas will not follow. The comment in `constants.ts` is the only link.
 
 ---
 

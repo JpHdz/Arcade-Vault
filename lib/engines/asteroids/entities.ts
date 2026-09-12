@@ -7,7 +7,6 @@ import {
   BULLET_SPEED,
   BULLET_TTL,
   COLORS,
-  GLOW,
   H,
   PARTICLE_MAX_LIFE,
   PARTICLE_MAX_SPEED,
@@ -28,7 +27,6 @@ import {
   SPEEDS,
   TRIPLE_SPREAD,
   W,
-  type Rgb,
 } from "./constants";
 
 // ── Utils ────────────────────────────────────────────────────────────────────
@@ -138,8 +136,6 @@ export class Asteroid {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rot);
     ctx.strokeStyle = COLORS.asteroid;
-    ctx.shadowColor = COLORS.asteroid;
-    ctx.shadowBlur = GLOW;
     ctx.lineWidth = 1.5;
     ctx.lineJoin = "round";
     ctx.beginPath();
@@ -183,11 +179,9 @@ export class PowerUp {
     // Blinks during its last two seconds.
     if (this.ttl < 2 && Math.floor(this.ttl * 8) % 2 === 0) return;
     const pulse = 0.85 + Math.sin(performance.now() / 150) * 0.15;
-    // The outer save keeps the glow and the text alignment from leaking into
-    // whatever is drawn next (the in-canvas HUD in particular).
+    // The outer save keeps the text alignment from leaking into whatever is
+    // drawn next (the in-canvas HUD in particular).
     ctx.save();
-    ctx.shadowColor = COLORS.powerUp;
-    ctx.shadowBlur = GLOW;
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(Math.PI / 4);
@@ -284,8 +278,6 @@ export class Ship {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
     ctx.strokeStyle = COLORS.ship;
-    ctx.shadowColor = COLORS.ship;
-    ctx.shadowBlur = GLOW;
     ctx.lineWidth = 1.5;
     ctx.lineJoin = "round";
 
@@ -298,9 +290,8 @@ export class Ship {
     ctx.closePath();
     ctx.stroke();
 
-    // Thrust flame, without glow.
+    // Thrust flame
     if (this.thrusting && Math.random() > 0.35) {
-      ctx.shadowBlur = 0;
       ctx.beginPath();
       ctx.moveTo(-8, -4);
       ctx.lineTo(-8 - rand(6, 14), 0);
@@ -323,12 +314,10 @@ export class Particle {
   life: number;
   ttl: number;
   dead = false;
-  private readonly rgb: Rgb;
 
-  constructor(x: number, y: number, rgb: Rgb) {
+  constructor(x: number, y: number) {
     this.x = x;
     this.y = y;
-    this.rgb = rgb;
     const angle = rand(0, Math.PI * 2);
     const speed = rand(PARTICLE_MIN_SPEED, PARTICLE_MAX_SPEED);
     this.vx = Math.cos(angle) * speed;
@@ -346,8 +335,7 @@ export class Particle {
 
   draw(ctx: CanvasRenderingContext2D) {
     const alpha = this.ttl / this.life;
-    const [r, g, b] = this.rgb;
-    ctx.strokeStyle = `rgba(${r},${g},${b},${alpha.toFixed(2)})`;
+    ctx.strokeStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(this.x, this.y);

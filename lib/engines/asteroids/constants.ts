@@ -70,27 +70,17 @@ export const MAX_DT = 0.05;
 /** Cap on the device pixel ratio, which bounds the fill cost on dense screens. */
 export const MAX_DPR = 2;
 
-export type Rgb = readonly [number, number, number];
-
 /**
- * Canvas cannot read CSS variables, so these hex values mirror the palette in
- * app/globals.css (--cyan, --magenta, --yellow, --green). If the palette
- * changes there, update it here too.
- *
- * The neon recolour covers the world only; the in-canvas HUD keeps the
- * original white text, white life icons and #0ff triple-shot line.
+ * The original game's colours, unchanged: white vector lines on black, a cyan
+ * power-up and an orange thrust flame. No glow anywhere.
  */
 export const COLORS = {
-  ship: "#00f5ff",
+  background: "#000",
+  ship: "#fff",
   thrust: "rgba(255, 130, 0, 0.85)",
-  asteroid: "#ff006e",
-  bullet: "#f5ff00",
-  powerUp: "#00ff88",
-  asteroidParticle: [255, 0, 110] as Rgb,
-  shipParticle: [0, 245, 255] as Rgb,
+  asteroid: "#fff",
+  bullet: "#fff",
+  powerUp: "#0ff",
   hud: "#fff",
   hudPowerUp: "#0ff",
 } as const;
-
-/** shadowBlur for the ship, asteroids and power-up. Never on particles or bullets. */
-export const GLOW = 8;
