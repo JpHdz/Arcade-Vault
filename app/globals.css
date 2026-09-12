@@ -1760,3 +1760,12 @@ a { color: inherit; text-decoration: none; }
   clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
 }
 @keyframes spinpix { to { transform: rotate(360deg); } }
+
+/* ===== CONTACT: FAILED TERMINAL (SPEC 03) =====
+   Error variant of `.terminal-success`, shown when the contact form's Server
+   Action fails. Only recolours green to the sheet's red (--magenta); layout
+   and every base rule stay as defined above. `.dim` lines are excluded so the
+   [OK] steps keep their muted look. */
+.terminal-success.failed { border-color: var(--magenta); box-shadow: 0 0 22px rgba(255,0,110,0.25); }
+.terminal-success.failed .term-body .line:not(.dim) { color: var(--magenta); }
+.terminal-success.failed .term-body .success { color: var(--magenta); text-shadow: 0 0 6px rgba(255,0,110,0.45); }

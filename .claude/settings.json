@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "NODE=$(command -v node || echo \"C:/Program Files/nodejs/node.exe\"); \"$NODE\" \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-and-lint.mjs\"",
+            "timeout": 60,
+            "statusMessage": "Formatting with Prettier and linting with ESLint..."
+          }
+        ]
+      }
+    ]
+  }
+}
