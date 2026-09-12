@@ -504,6 +504,43 @@ a { color: inherit; text-decoration: none; }
   text-shadow: 0 0 8px var(--yellow);
 }
 
+/* Asteroides is the one playable title, so its cover draws the actual game: a
+   cyan vector ship firing a triple-shot fan at magenta polygon rocks, and one
+   rock split by the left and right edges to show the wrap-around field. SVG
+   masks carry the geometry so every colour stays a palette variable, and the
+   glow is a faint wide stroke inside the mask (a filter would be masked away).
+   Rock and ship units are both 1% of the cover height, so the ship lives in a
+   centred square and lines up the same in square and wide cards. */
+.cover-asteroides {
+  background:
+    radial-gradient(circle at 12% 18%, var(--ink) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 31% 62%, var(--ink) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 63% 9%, var(--ink) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 84% 42%, var(--ink) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 91% 90%, var(--ink) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 20% 94%, var(--ink) 0 1px, transparent 1.5px),
+    radial-gradient(90% 70% at 88% 100%, rgba(255,0,110,0.16), transparent 65%),
+    linear-gradient(165deg, #080216, #000 75%);
+}
+.cover-asteroides::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: var(--magenta);
+  mask:
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 100' fill='none' stroke='%23000' stroke-linejoin='round'><defs><g id='r'><polygon points='52,11 61,13 67,20 65,27 68,34 60,40 51,38 43,41 38,33 40,26 37,18 45,13'/><polygon points='114,60 121,63 124,70 120,76 122,80 113,80 106,77 104,70 108,63'/><polygon points='100,17 104,19 105,23 101,27 96,26 95,20'/><polygon points='44,74 49,76 50,81 46,86 40,85 38,79'/></g></defs><use href='%23r' stroke-width='5' stroke-opacity='.12'/><use href='%23r' stroke-width='2.6' stroke-opacity='.3'/><use href='%23r' stroke-width='1.1'/></svg>") center / cover no-repeat,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 -2 12 24' fill='none' stroke='%23000' stroke-linejoin='round'><defs><polygon id='h' points='0,1 6,3 9,9 6,14 7,18 0,19 -6,17 -9,12 -7,7 -8,3'/></defs><use href='%23h' stroke-width='5' stroke-opacity='.12'/><use href='%23h' stroke-width='2.6' stroke-opacity='.3'/><use href='%23h' stroke-width='1.1'/></svg>") 0 60% / auto 24% no-repeat,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 -2 12 24' fill='none' stroke='%23000' stroke-linejoin='round'><defs><polygon id='h' points='12,1 18,3 21,9 18,14 19,18 12,19 6,17 3,12 5,7 4,3'/></defs><use href='%23h' stroke-width='5' stroke-opacity='.12'/><use href='%23h' stroke-width='2.6' stroke-opacity='.3'/><use href='%23h' stroke-width='1.1'/></svg>") 100% 60% / auto 24% no-repeat;
+}
+.cover-asteroides::before {
+  content: "";
+  position: absolute; top: 0; left: 50%;
+  height: 100%; aspect-ratio: 1;
+  transform: translateX(-50%);
+  /* Hard stop just past the nose: the hull is cyan, the bullets ahead of it yellow. */
+  background: linear-gradient(310.6deg, var(--cyan) 59%, var(--yellow) 59%);
+  mask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><path id='s' d='M12 0L-7.2-5.4L-4.2 0L-7.2 5.4Z' transform='translate(50 50) rotate(-139.4)'/></defs><g fill='none' stroke='%23000' stroke-linejoin='round'><use href='%23s' stroke-width='5' stroke-opacity='.12'/><use href='%23s' stroke-width='2.6' stroke-opacity='.3'/><use href='%23s' stroke-width='1.1'/></g><g fill='%23000'><circle cx='35.6' cy='37.6' r='1.1'/><circle cx='38' cy='35.3' r='1.1'/><circle cx='33.6' cy='40.4' r='1.1'/></g></svg>") center / 100% 100% no-repeat;
+}
+
 .cover-rana { background: linear-gradient(180deg,#001f2a,#0a0a18); }
 .cover-rana::after {
   content: "";
@@ -617,6 +654,7 @@ a { color: inherit; text-decoration: none; }
 .hud-stat .v { font-family: var(--pixel); font-size: 16px; color: var(--cyan); text-shadow: 0 0 6px rgba(0,245,255,0.5); }
 .hud-stat.lives .v { color: var(--magenta); text-shadow: 0 0 6px rgba(255,0,110,0.5); }
 .hud-stat.level .v { color: var(--yellow); text-shadow: 0 0 6px rgba(245,255,0,0.5); }
+.hud-stat.power .v { color: var(--green); text-shadow: 0 0 6px rgba(0,255,136,0.5); }
 .hud-actions { display: flex; gap: 10px; }
 
 .crt {
@@ -1035,7 +1073,7 @@ a { color: inherit; text-decoration: none; }
 .feature-card .ft-title { font-size: 12px; letter-spacing: 0.1em; color: currentColor; text-shadow: 0 0 8px currentColor; }
 .feature-card .ft-desc { color: var(--ink-dim); font-size: 13px; line-height: 1.6; }
 
-.mini-rail { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+.mini-rail { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 16px; }
 @media (max-width: 1100px) { .mini-rail { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 600px) { .mini-rail { grid-template-columns: repeat(2, 1fr); } }
 .mini-card { background: var(--bg-2); border: 1px solid var(--line); cursor: pointer; transition: transform 180ms ease, border-color 180ms; }

@@ -28,6 +28,17 @@ export interface ScoreRow {
 
 export const GAMES: Game[] = [
   {
+    id: "asteroides",
+    title: "ASTEROIDES",
+    short: "Parte rocas en pedazos sin chocar con ninguna.",
+    long: "Tu nave vectorial deriva en un campo de asteroides sin bordes: lo que sale por un lado entra por el otro. Cada roca grande se parte en dos medianas y cada mediana en dos pequeñas. Atrapa el núcleo 3X y dispara en abanico durante cinco segundos.",
+    cat: "SHOOTER",
+    cover: "cover-asteroides",
+    color: "cyan",
+    best: 38750,
+    plays: "21.3K",
+  },
+  {
     id: "bloque-buster",
     title: "BLOQUE BUSTER",
     short: "Rebota la pelota y destruye muros de neón.",
