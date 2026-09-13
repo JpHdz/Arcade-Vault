@@ -8,15 +8,6 @@ export interface Feature {
   color: AccentColor;
 }
 
-export interface TickerEntry {
-  player: string;
-  /** Display name of the game, not a Game["id"]. */
-  game: string;
-  score: number;
-  when: string;
-  color: AccentColor;
-}
-
 export interface TopPlayer {
   rank: number;
   player: string;
@@ -69,16 +60,6 @@ export const HOME_STATS: HomeStat[] = [
   { value: "12+", unit: "JUEGOS", caption: "Y CONTANDO" },
   { value: "MILES", unit: "DE PARTIDAS", caption: "JUGADAS CADA DÍA" },
   { value: "GLOBAL", unit: "RANKING", caption: "COMPITE CON EL MUNDO" },
-];
-
-export const TICKER: TickerEntry[] = [
-  { player: "NEONFOX", game: "Caída", score: 184220, when: "hace 2 min", color: "magenta" },
-  { player: "PX_KAI", game: "Glotón", score: 96400, when: "hace 5 min", color: "yellow" },
-  { player: "Z3R0COOL", game: "Invasores", score: 54190, when: "hace 8 min", color: "green" },
-  { player: "VAULT_07", game: "Rocas", score: 41200, when: "hace 12 min", color: "cyan" },
-  { player: "GLITCHA", game: "Bloque Buster", score: 28450, when: "hace 18 min", color: "cyan" },
-  { player: "ARKADYA", game: "Serpentina", score: 7820, when: "hace 24 min", color: "green" },
-  { player: "CYBER_LU", game: "Ranaria", score: 18900, when: "hace 31 min", color: "yellow" },
 ];
 
 export const TOP_PLAYERS: TopPlayer[] = [

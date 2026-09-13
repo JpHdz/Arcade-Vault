@@ -1,19 +1,59 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { podiumClass } from "@/components/leaderboard";
-import { GAMES, seededScores } from "@/lib/games";
+import { useEffect, useState } from "react";
+import { BoardState, podiumClass } from "@/components/leaderboard";
+import { GAMES } from "@/lib/games";
+import { getPlayerBest, type PlayerBest } from "@/lib/scores/player-best";
+import { sanitizePlayerName } from "@/lib/scores/player-name";
+import type { ScoreRow } from "@/lib/scores/types";
 import { useSession } from "@/lib/session";
 
-export function HallOfFame() {
+/** Podium order on screen: silver, gold, bronze. */
+const PODIUM = [
+  { index: 1, tier: "silver" },
+  { index: 0, tier: "gold" },
+  { index: 2, tier: "bronze" },
+] as const;
+
+/** The viewer's best run, remembered with the tab and name it was fetched for. */
+interface PlayerBestResult {
+  key: string;
+  best: PlayerBest | null;
+}
+
+/**
+ * `rowsByGame` holds each game's top 12: `null` = unavailable, `[]` = no
+ * scores yet.
+ */
+export function HallOfFame({
+  rowsByGame,
+}: {
+  rowsByGame: Record<string, ScoreRow[] | null>;
+}) {
   const [tab, setTab] = useState(GAMES[0].id);
   const { user } = useSession();
+  const [playerBest, setPlayerBest] = useState<PlayerBestResult | null>(null);
 
-  const rows = useMemo(() => seededScores(tab.length * 23 + 7, 12), [tab]);
+  const rows = rowsByGame[tab] ?? null;
   const game = GAMES.find((g) => g.id === tab);
+  const playerName = user ? sanitizePlayerName(user.name) : "";
+  const bestKey = `${tab}:${playerName}`;
 
-  const youRank = user ? Math.floor(8 + (tab.length % 4)) : null;
-  const youScore = user ? rows[5].score - 2400 : null;
+  useEffect(() => {
+    if (!playerName) return;
+    let cancelled = false;
+    getPlayerBest(tab, playerName).then((best) => {
+      if (!cancelled) setPlayerBest({ key: `${tab}:${playerName}`, best });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, playerName]);
+
+  // Hidden while loading (the stored result belongs to another tab or name),
+  // when signed out, when the sanitized name is empty, and when there is none.
+  const you =
+    playerName && playerBest?.key === bestKey ? playerBest.best : null;
 
   return (
     <>
@@ -30,38 +70,43 @@ export function HallOfFame() {
       </div>
 
       <div className="podium">
-        <div className="podium-slot silver">
-          <div className="rank-num">02</div>
-          <div className="name">{rows[1].name}</div>
-          <div className="score">{rows[1].score.toLocaleString("es-ES")}</div>
-          <div className="date">{rows[1].date}</div>
-        </div>
-        <div className="podium-slot gold">
-          <div
-            className="pixel"
-            style={{
-              fontSize: 9,
-              color: "var(--gold)",
-              letterSpacing: "0.18em",
-            }}
-          >
-            CAMPEÓN
-          </div>
-          <div className="rank-num" style={{ fontSize: 36, marginTop: 4 }}>
-            01
-          </div>
-          <div className="name">{rows[0].name}</div>
-          <div className="score" style={{ fontSize: 20 }}>
-            {rows[0].score.toLocaleString("es-ES")}
-          </div>
-          <div className="date">{rows[0].date}</div>
-        </div>
-        <div className="podium-slot bronze">
-          <div className="rank-num">03</div>
-          <div className="name">{rows[2].name}</div>
-          <div className="score">{rows[2].score.toLocaleString("es-ES")}</div>
-          <div className="date">{rows[2].date}</div>
-        </div>
+        {PODIUM.map(({ index, tier }) => {
+          const row = rows?.[index];
+          const gold = tier === "gold";
+          return (
+            <div
+              key={tier}
+              className={`podium-slot ${tier}` + (row ? "" : " vacant")}
+            >
+              {gold && (
+                <div
+                  className="pixel"
+                  style={{
+                    fontSize: 9,
+                    color: "var(--gold)",
+                    letterSpacing: "0.18em",
+                  }}
+                >
+                  CAMPEÓN
+                </div>
+              )}
+              <div
+                className="rank-num"
+                style={gold ? { fontSize: 36, marginTop: 4 } : undefined}
+              >
+                {String(index + 1).padStart(2, "0")}
+              </div>
+              <div className="name">{row ? row.name : "—"}</div>
+              <div
+                className="score"
+                style={gold ? { fontSize: 20 } : undefined}
+              >
+                {row ? row.score.toLocaleString("es-ES") : "—"}
+              </div>
+              <div className="date">{row ? row.date : "—"}</div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="hall-table">
@@ -71,30 +116,35 @@ export function HallOfFame() {
           <div>PUNTUACIÓN</div>
           <div>FECHA</div>
         </div>
-        {rows.map((r, i) => (
-          <div
-            key={r.name + i}
-            className={"tr" + podiumClass(i)}
-            style={{ animationDelay: `${i * 50}ms` }}
-          >
-            <div className="rk">#{String(r.rank).padStart(2, "0")}</div>
-            <div className="pl">{r.name}</div>
-            <div className="sc">{r.score.toLocaleString("es-ES")}</div>
-            <div className="dt">{r.date}</div>
-          </div>
-        ))}
-        {user && game && (
+        {rows === null || rows.length === 0 ? (
+          <BoardState unavailable={rows === null} />
+        ) : (
+          rows.map((r, i) => (
+            <div
+              // The tab is part of the key so each tab replays the entrance.
+              key={`${tab}-${r.rank}`}
+              className={"tr" + podiumClass(i)}
+              style={{ animationDelay: `${i * 50}ms` }}
+            >
+              <div className="rk">#{String(r.rank).padStart(2, "0")}</div>
+              <div className="pl">{r.name}</div>
+              <div className="sc">{r.score.toLocaleString("es-ES")}</div>
+              <div className="dt">{r.date}</div>
+            </div>
+          ))
+        )}
+        {you && game && (
           <>
             <div className="tr you-label">▸ TU MEJOR MARCA EN {game.title}</div>
             <div
               className="tr you"
-              style={{ animationDelay: `${rows.length * 50 + 50}ms` }}
+              style={{ animationDelay: `${(rows?.length ?? 0) * 50 + 50}ms` }}
             >
               <div className="rk" style={{ color: "var(--yellow)" }}>
-                #{String(youRank).padStart(2, "0")}
+                #{String(you.rank).padStart(2, "0")}
               </div>
               <div className="pl" style={{ color: "var(--yellow)" }}>
-                {user.name}
+                {playerName}
               </div>
               <div
                 className="sc"
@@ -103,9 +153,9 @@ export function HallOfFame() {
                   textShadow: "0 0 6px rgba(245,255,0,0.5)",
                 }}
               >
-                {(youScore || 9999).toLocaleString("es-ES")}
+                {you.score.toLocaleString("es-ES")}
               </div>
-              <div className="dt">11/05/2026</div>
+              <div className="dt">{you.date}</div>
             </div>
           </>
         )}

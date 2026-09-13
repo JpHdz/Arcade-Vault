@@ -2,13 +2,19 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Leaderboard } from "@/components/leaderboard";
-import { GAMES, getGame, seededScores } from "@/lib/games";
+import { GAMES, getGame } from "@/lib/games";
+import { formatPlays } from "@/lib/scores/format";
+import { getGameStats, getLeaderboard } from "@/lib/scores/queries";
 
-// The catalogue is a fixed list, so every detail page is prerendered and any
-// other id is rejected by the router. That way an unknown game is answered with
-// the themed not-found page as full HTML, instead of the empty error shell that
-// a `notFound()` thrown while rendering on demand produces.
-export const dynamicParams = false;
+// The catalogue is a fixed list, so every detail page is prerendered; an
+// unknown id is answered by the `notFound()` below. Unlike /play/[id], this
+// route keeps the default `dynamicParams`: its pages read the `scores` tag, and
+// in Next 16.3.4 expiring that tag drops the cached page, which a route with
+// `dynamicParams = false` then answers (and caches) as a 404.
+
+// Saving a score expires the cached reads on demand; this hourly pass only
+// lets a page rendered during a Supabase outage recover without a new save.
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   return GAMES.map((game) => ({ id: game.id }));
@@ -26,7 +32,12 @@ export default async function GameDetailPage(props: PageProps<"/games/[id]">) {
   const game = getGame(id);
   if (!game) notFound();
 
-  const scores = seededScores(id.length * 17 + 3, 10);
+  const [scores, stats] = await Promise.all([
+    getLeaderboard(id, 10),
+    getGameStats(),
+  ]);
+  // Undefined when the stats are unavailable: both values then show "—".
+  const gameStats = stats?.[id];
 
   return (
     <div className="av-detail fade-in">
@@ -46,7 +57,9 @@ export default async function GameDetailPage(props: PageProps<"/games/[id]">) {
           <div className="stat-strip">
             <div>
               <div className="l">Partidas</div>
-              <div className="v">{game.plays}</div>
+              <div className="v">
+                {gameStats ? formatPlays(gameStats.plays) : "—"}
+              </div>
             </div>
             <div>
               <div className="l">Mejor global</div>
@@ -57,7 +70,9 @@ export default async function GameDetailPage(props: PageProps<"/games/[id]">) {
                   textShadow: "0 0 6px rgba(255,0,110,0.5)",
                 }}
               >
-                {game.best.toLocaleString("es-ES")}
+                {gameStats?.best != null
+                  ? gameStats.best.toLocaleString("es-ES")
+                  : "—"}
               </div>
             </div>
             <div>
