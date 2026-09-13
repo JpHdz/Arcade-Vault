@@ -14,33 +14,15 @@ export interface VaultUser {
   name: string;
 }
 
-export interface SavedScore {
-  game: string;
-  score: number;
-  name: string;
-  at: number;
-}
-
 const USER_KEY = "av_user";
-const SCORES_KEY = "av_scores";
 
 interface SessionValue {
   user: VaultUser | null;
   signIn: (user: VaultUser) => void;
   signOut: () => void;
-  saveScore: (entry: Omit<SavedScore, "at">) => void;
 }
 
 const SessionContext = createContext<SessionValue | null>(null);
-
-function readStored<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
 
 /* ===== external store over localStorage =====
  * The snapshot has to be referentially stable between reads or React would
@@ -112,19 +94,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     emit();
   }, []);
 
-  const saveScore = useCallback((entry: Omit<SavedScore, "at">) => {
-    try {
-      const all = readStored<SavedScore[]>(SCORES_KEY, []);
-      all.push({ ...entry, at: Date.now() });
-      localStorage.setItem(SCORES_KEY, JSON.stringify(all));
-    } catch {
-      // Saved scores are decorative in this MVP; a failed write is silent.
-    }
-  }, []);
-
   const value = useMemo(
-    () => ({ user, signIn, signOut, saveScore }),
-    [user, signIn, signOut, saveScore],
+    () => ({ user, signIn, signOut }),
+    [user, signIn, signOut],
   );
 
   return (

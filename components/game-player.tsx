@@ -1,17 +1,31 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { submitScore } from "@/app/play/[id]/actions";
 import { EngineCanvas } from "@/components/engine-canvas";
 import { getEngine } from "@/lib/engines/registry";
 import type { EngineStats } from "@/lib/engines/types";
 import type { Game } from "@/lib/games";
+import { sanitizePlayerName } from "@/lib/scores/player-name";
+import {
+  rememberPlayerName,
+  useRememberedName,
+} from "@/lib/scores/remembered-name";
 import { useSession } from "@/lib/session";
 
 /** Simulated score tick, in milliseconds. */
 const TICK_MS = 220;
 /** Points needed to reach the next level. */
 const POINTS_PER_LEVEL = 2500;
+/** Shown when the action cannot be reached at all, e.g. the network is down. */
+const SAVE_FAILED = "NO SE PUDO GUARDAR. INTÉNTALO DE NUEVO.";
+
+type SaveState =
+  | { status: "idle" }
+  | { status: "saving" }
+  | { status: "saved" }
+  | { status: "error"; message: string };
 
 /** Shortcuts must never fire while the player is typing in a form field. */
 function isEditableTarget(target: EventTarget | null) {
@@ -26,17 +40,23 @@ function isEditableTarget(target: EventTarget | null) {
 
 export function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
-  const { user, saveScore } = useSession();
+  const { user } = useSession();
   // A registered engine means a real canvas game; otherwise the SPEC 01 simulation runs.
   const factory = getEngine(game.id);
+  const saveErrorId = useId();
 
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [save, setSave] = useState<SaveState>({ status: "idle" });
   // Null means "follow the session"; typing in the modal pins a name instead.
   const [typedName, setTypedName] = useState<string | null>(null);
+  // Blocks a second submit before React re-renders the button as disabled.
+  const savingRef = useRef(false);
+  // Bumped by every restart, so a save still in flight for a previous run
+  // cannot overwrite the next run's modal state.
+  const runIdRef = useRef(0);
 
   // Engine-backed games only.
   const [started, setStarted] = useState(false);
@@ -45,7 +65,16 @@ export function GamePlayer({ game }: { game: Game }) {
   // Bumping it remounts the canvas, which builds a fresh engine instance.
   const [runKey, setRunKey] = useState(0);
 
-  const name = typedName ?? user?.name ?? "INVITADO";
+  // The name the player last saved with; when set, runs save automatically.
+  const remembered = useRememberedName();
+  // Once the player types, the field shows exactly that (even empty; the
+  // action rejects an empty name). Until then the remembered name wins, then
+  // the session name, and INVITADO only fills in when both are missing.
+  const name =
+    typedName ??
+    remembered ??
+    (sanitizePlayerName(user?.name ?? "") || "INVITADO");
+  const saving = save.status === "saving";
   const level = factory
     ? engineLevel
     : Math.floor(score / POINTS_PER_LEVEL) + 1;
@@ -105,17 +134,56 @@ export function GamePlayer({ game }: { game: Game }) {
     setPowerUpSeconds(stats.powerUpSeconds);
   };
 
-  const handleGameOver = (finalScore: number) => {
-    setScore(finalScore);
-    setOver(true);
+  const saveRun = async (playerName: string, finalScore: number) => {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    const runId = runIdRef.current;
+    setSave({ status: "saving" });
+
+    let next: SaveState;
+    try {
+      const result = await submitScore({
+        gameId: game.id,
+        name: playerName,
+        score: finalScore,
+      });
+      if (result.status === "saved") {
+        // Later runs save themselves under this name.
+        rememberPlayerName(playerName);
+        next = { status: "saved" };
+      } else {
+        next = { status: "error", message: result.message };
+      }
+    } catch {
+      // The action could not be reached at all, e.g. the network is down.
+      next = { status: "error", message: SAVE_FAILED };
+    } finally {
+      // A restart already released the lock for the new run.
+      if (runIdRef.current === runId) savingRef.current = false;
+    }
+    if (runIdRef.current === runId) setSave(next);
   };
 
+  // Ends the run, from the engine's game over or from FIN. With a remembered
+  // name the run saves itself right away, without asking; the score is passed
+  // in because the state update above has not been applied yet.
+  const handleGameOver = (finalScore: number) => {
+    if (over) return;
+    setScore(finalScore);
+    setOver(true);
+    if (remembered) void saveRun(remembered, finalScore);
+  };
+
+  const handleSave = () => saveRun(name, score);
+
   const restart = () => {
+    runIdRef.current += 1;
+    savingRef.current = false;
     setScore(0);
     setLives(3);
     setPaused(false);
     setOver(false);
-    setSaved(false);
+    setSave({ status: "idle" });
     setStarted(false);
     setEngineLevel(1);
     setPowerUpSeconds(0);
@@ -155,7 +223,7 @@ export function GamePlayer({ game }: { game: Game }) {
           <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
             {paused ? "REANUDAR" : "PAUSA"}
           </button>
-          <button className="btn magenta" onClick={() => setOver(true)}>
+          <button className="btn magenta" onClick={() => handleGameOver(score)}>
             FIN
           </button>
           <button
@@ -260,26 +328,37 @@ export function GamePlayer({ game }: { game: Game }) {
             <h2>FIN DEL JUEGO</h2>
             <div className="final-label">PUNTUACIÓN FINAL</div>
             <div className="final">{score.toLocaleString("es-ES")}</div>
-            {!saved ? (
-              <div className="input-row">
-                <input
-                  value={name}
-                  onChange={(e) =>
-                    setTypedName(e.target.value.toUpperCase().slice(0, 10))
-                  }
-                  placeholder="TUS INICIALES"
-                  aria-label="Nombre para la tabla de puntuaciones"
-                />
-                <button
-                  className="btn yellow"
-                  onClick={() => {
-                    saveScore({ game: game.id, score, name });
-                    setSaved(true);
-                  }}
-                >
-                  GUARDAR PUNTUACIÓN
-                </button>
-              </div>
+            {save.status !== "saved" ? (
+              <>
+                <div className="input-row">
+                  <input
+                    value={name}
+                    onChange={(e) =>
+                      setTypedName(sanitizePlayerName(e.target.value))
+                    }
+                    disabled={saving}
+                    placeholder="TUS INICIALES"
+                    aria-label="Nombre para la tabla de puntuaciones"
+                    aria-invalid={save.status === "error" || undefined}
+                    aria-describedby={
+                      save.status === "error" ? saveErrorId : undefined
+                    }
+                  />
+                  <button
+                    className="btn yellow"
+                    onClick={handleSave}
+                    disabled={saving}
+                  >
+                    {saving ? "GUARDANDO…" : "GUARDAR PUNTUACIÓN"}
+                  </button>
+                </div>
+                {save.status === "error" && (
+                  <p id={saveErrorId} className="save-error" role="alert">
+                    <span aria-hidden="true">✕ </span>
+                    {save.message}
+                  </p>
+                )}
+              </>
             ) : (
               <div className="toast-saved">▸ PUNTUACIÓN GUARDADA_</div>
             )}

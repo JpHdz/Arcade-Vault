@@ -3,17 +3,22 @@ import Link from "next/link";
 import { FeatureIcon } from "@/components/home/feature-icon";
 import { FloatingSilhouettes } from "@/components/home/floating-silhouettes";
 import { RevealObserver } from "@/components/home/reveal-observer";
-import { GAMES, type Game } from "@/lib/games";
+import { TimeAgo } from "@/components/time-ago";
+import { GAMES, getGame, type Game } from "@/lib/games";
 import {
   FAQ,
   FEATURES,
   HOME_STATS,
   PRICING_PERKS,
-  TICKER,
   TOP_PLAYERS,
 } from "@/lib/home-content";
+import { getRecentScores } from "@/lib/scores/queries";
 
 export const metadata: Metadata = { title: "Inicio" };
+
+// Saving a score expires the cached reads on demand; this hourly pass only
+// lets a page rendered during a Supabase outage recover without a new save.
+export const revalidate = 3600;
 
 function MiniCard({ game }: { game: Game }) {
   return (
@@ -29,7 +34,9 @@ function MiniCard({ game }: { game: Game }) {
   );
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const recent = await getRecentScores(7);
+
   return (
     <div className="home fade-in">
       <RevealObserver />
@@ -137,18 +144,39 @@ export default function HomePage() {
               <div className="ac-title pixel">▸ ÚLTIMAS PUNTUACIONES</div>
             </div>
             <div className="ticker">
-              {TICKER.map((r, i) => (
-                <div
-                  key={r.player + r.game}
-                  className="tick-row"
-                  style={{ animationDelay: i * 60 + "ms" }}
-                >
-                  <span className={"tk-p neon-" + r.color}>{r.player}</span>
-                  <span className="tk-mid">▸ {r.game}</span>
-                  <span className="tk-s">+{r.score.toLocaleString("es-ES")}</span>
-                  <span className="tk-t">{r.when}</span>
+              {recent === null ? (
+                <div className="tick-empty is-down">
+                  ACTIVIDAD NO DISPONIBLE
                 </div>
-              ))}
+              ) : recent.length === 0 ? (
+                <div className="tick-empty">
+                  SIN PUNTUACIONES AÚN · SÉ EL PRIMERO
+                </div>
+              ) : (
+                recent.map((r, i) => {
+                  const game = getGame(r.gameId);
+                  return (
+                    <div
+                      key={r.at + r.name}
+                      className="tick-row"
+                      style={{ animationDelay: i * 60 + "ms" }}
+                    >
+                      <span className={"tk-p neon-" + (game?.color ?? "cyan")}>
+                        {r.name}
+                      </span>
+                      <span className="tk-mid">
+                        ▸ {game?.title ?? r.gameId}
+                      </span>
+                      <span className="tk-s">
+                        +{r.score.toLocaleString("es-ES")}
+                      </span>
+                      <span className="tk-t">
+                        <TimeAgo at={r.at} />
+                      </span>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -167,15 +195,28 @@ export default function HomePage() {
                   key={r.player}
                   className={
                     "top-row" +
-                    (i === 0 ? " top1" : i === 1 ? " top2" : i === 2 ? " top3" : "")
+                    (i === 0
+                      ? " top1"
+                      : i === 1
+                        ? " top2"
+                        : i === 2
+                          ? " top3"
+                          : "")
                   }
                 >
-                  <span className="tp-rk">#{String(r.rank).padStart(2, "0")}</span>
+                  <span className="tp-rk">
+                    #{String(r.rank).padStart(2, "0")}
+                  </span>
                   <span className="tp-bar">
-                    <span className="tp-fill" style={{ width: 100 - i * 16 + "%" }} />
+                    <span
+                      className="tp-fill"
+                      style={{ width: 100 - i * 16 + "%" }}
+                    />
                   </span>
                   <span className="tp-p">{r.player}</span>
-                  <span className="tp-s">{r.score.toLocaleString("es-ES")}</span>
+                  <span className="tp-s">
+                    {r.score.toLocaleString("es-ES")}
+                  </span>
                 </div>
               ))}
             </div>
@@ -204,7 +245,11 @@ export default function HomePage() {
                 <li key={perk}>✔ {perk}</li>
               ))}
             </ul>
-            <Link className="btn xl pulse" style={{ width: "100%" }} href="/sign-in">
+            <Link
+              className="btn xl pulse"
+              style={{ width: "100%" }}
+              href="/sign-in"
+            >
               EMPEZAR GRATIS →
             </Link>
             <div className="pc-foot">No pedimos tarjeta. Nunca lo haremos.</div>

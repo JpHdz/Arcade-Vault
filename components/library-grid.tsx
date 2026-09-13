@@ -3,8 +3,16 @@
 import { useMemo, useState } from "react";
 import { GameCard } from "@/components/game-card";
 import { CATS, type Game } from "@/lib/games";
+import type { GameStatsMap } from "@/lib/scores/types";
 
-export function LibraryGrid({ games }: { games: Game[] }) {
+/** `stats` is null when the stats are unavailable. */
+export function LibraryGrid({
+  games,
+  stats,
+}: {
+  games: Game[];
+  stats: GameStatsMap | null;
+}) {
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState("TODOS");
 
@@ -45,7 +53,7 @@ export function LibraryGrid({ games }: { games: Game[] }) {
 
       <div className="av-grid">
         {filtered.map((g) => (
-          <GameCard key={g.id} game={g} />
+          <GameCard key={g.id} game={g} stats={stats?.[g.id] ?? null} />
         ))}
         {filtered.length === 0 && (
           <div
@@ -58,7 +66,11 @@ export function LibraryGrid({ games }: { games: Game[] }) {
           >
             <div
               className="pixel"
-              style={{ fontSize: 14, color: "var(--magenta)", marginBottom: 12 }}
+              style={{
+                fontSize: 14,
+                color: "var(--magenta)",
+                marginBottom: 12,
+              }}
             >
               NO HAY RESULTADOS
             </div>

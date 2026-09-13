@@ -3,8 +3,16 @@
 import Link from "next/link";
 import { useRef, type MouseEvent } from "react";
 import type { Game } from "@/lib/games";
+import type { GameStats } from "@/lib/scores/types";
 
-export function GameCard({ game }: { game: Game }) {
+/** `stats` is null when the stats are unavailable; the best then shows "—". */
+export function GameCard({
+  game,
+  stats,
+}: {
+  game: Game;
+  stats: GameStats | null;
+}) {
   const tiltRef = useRef<HTMLAnchorElement>(null);
 
   const onMove = (e: MouseEvent<HTMLAnchorElement>) => {
@@ -22,7 +30,11 @@ export function GameCard({ game }: { game: Game }) {
   };
 
   const accent =
-    game.color === "magenta" ? "magenta" : game.color === "yellow" ? "yellow" : "";
+    game.color === "magenta"
+      ? "magenta"
+      : game.color === "yellow"
+        ? "yellow"
+        : "";
 
   return (
     <Link
@@ -42,7 +54,9 @@ export function GameCard({ game }: { game: Game }) {
         <div className="row">
           <div className="score-badge">
             <span>MEJOR PUNTUACIÓN</span>
-            <b>{game.best.toLocaleString("es-ES")}</b>
+            <b>
+              {stats?.best != null ? stats.best.toLocaleString("es-ES") : "—"}
+            </b>
           </div>
           {/* The whole card is the link, so this stays a plain span to avoid
               nesting one interactive element inside another. */}
